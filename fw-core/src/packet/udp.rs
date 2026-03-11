@@ -8,10 +8,30 @@ pub struct UdpHeader<'a> {
 }
 
 impl UdpHeader<'_> {
-    pub fn parse(bytes: &[u8]) -> Option<UdpHeader<'_>> {
-        Some(UdpHeader {
-            src_port: u16::from_be_bytes(bytes[0..=1].try_into().ok()?),
-            dst_port: u16::from_be_bytes(bytes[2..=3].try_into().ok()?),
+    pub const MIN_LEN: usize = 8;
+    pub const HEADER: &'static str = "udp";
+
+    pub fn parse(bytes: &[u8]) -> Result<UdpHeader<'_>, super::PacketError> {
+        if bytes.len() < Self::MIN_LEN {
+            return Err(super::PacketError::InvalidHeaderLength {
+                header: Self::HEADER,
+                min: Self::MIN_LEN,
+                actual: bytes.len(),
+            });
+        }
+        Ok(UdpHeader {
+            src_port: u16::from_be_bytes(bytes[0..=1].try_into().map_err(|_| {
+                super::PacketError::ErrorParsingHeaderFields {
+                    header: Self::HEADER,
+                    field: "source port",
+                }
+            })?),
+            dst_port: u16::from_be_bytes(bytes[2..=3].try_into().map_err(|_| {
+                super::PacketError::ErrorParsingHeaderFields {
+                    header: Self::HEADER,
+                    field: "destination port",
+                }
+            })?),
             data: &bytes[8..],
         })
     }

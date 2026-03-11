@@ -24,11 +24,11 @@ pub fn start_capture(verbose: bool) -> Result<(), RuntimeError> {
     while let Ok(packet) = cap.next_packet() {
         if verbose {
             match parse_packet(packet.data) {
-                Some(h) => {
+                Ok(h) => {
                     println!("{}", h);
                 }
-                None => {
-                    println!("Error parsing packet");
+                Err(e) => {
+                    println!("{}", e);
                 }
             }
         }

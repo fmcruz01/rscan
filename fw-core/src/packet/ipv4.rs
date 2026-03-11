@@ -1,5 +1,5 @@
-use std::fmt;
 use super::Protocol;
+use std::fmt;
 
 #[repr(C)]
 pub struct IPv4Header<'a> {
@@ -11,14 +11,40 @@ pub struct IPv4Header<'a> {
 }
 
 impl IPv4Header<'_> {
-    pub fn parse(bytes: &[u8]) -> Option<IPv4Header<'_>> {
-        Some(IPv4Header {
-            dst: bytes[16..=19].try_into().ok()?,
-            src: bytes[12..=15].try_into().ok()?,
+    pub const MIN_LEN: usize = 20;
+    pub const HEADER: &'static str = "ipv4";
+
+    pub fn parse(bytes: &[u8]) -> Result<IPv4Header<'_>, super::PacketError> {
+        if bytes.len() < Self::MIN_LEN {
+            return Err(super::PacketError::InvalidHeaderLength {
+                header: Self::HEADER,
+                min: Self::MIN_LEN,
+                actual: bytes.len(),
+            });
+        }
+        Ok(IPv4Header {
+            dst: bytes[16..=19].try_into().map_err(|_| {
+                super::PacketError::ErrorParsingHeaderFields {
+                    header: Self::HEADER,
+                    field: "destination IP address",
+                }
+            })?,
+            src: bytes[12..=15].try_into().map_err(|_| {
+                super::PacketError::ErrorParsingHeaderFields {
+                    header: Self::HEADER,
+                    field: "source IP address",
+                }
+            })?,
+
             protocol: match bytes[9] {
                 6 => Protocol::TCP,
                 17 => Protocol::UDP,
-                _ => Protocol::Unknown
+                other => {
+                    return Err(super::PacketError::UnsupportedFieldType {
+                        header: "protocol",
+                        field: other.to_string(),
+                    });
+                }
             },
             ttl: bytes[8],
             data: &bytes[24..],

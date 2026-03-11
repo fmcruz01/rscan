@@ -10,12 +10,43 @@ pub struct TcpHeader<'a> {
 }
 
 impl TcpHeader<'_> {
-    pub fn parse(bytes: &[u8]) -> Option<TcpHeader<'_>> {
-        Some(TcpHeader {
-            src_port: u16::from_be_bytes(bytes[0..=1].try_into().ok()?),
-            dst_port: u16::from_be_bytes(bytes[2..=3].try_into().ok()?),
-            seq_num: u32::from_be_bytes(bytes[4..=7].try_into().ok()?),
-            ack_num: u32::from_be_bytes(bytes[8..=11].try_into().ok()?),
+    pub const MIN_LEN: usize = 20;
+    pub const HEADER: &'static str = "tcp";
+
+    pub fn parse(bytes: &[u8]) -> Result<TcpHeader<'_>, super::PacketError> {
+        if bytes.len() < Self::MIN_LEN {
+            return Err(super::PacketError::InvalidHeaderLength {
+                header: Self::HEADER,
+                min: Self::MIN_LEN,
+                actual: bytes.len(),
+            });
+        }
+
+        Ok(TcpHeader {
+            src_port: u16::from_be_bytes(bytes[0..=1].try_into().map_err(|_| {
+                super::PacketError::ErrorParsingHeaderFields {
+                    header: Self::HEADER,
+                    field: "source port",
+                }
+            })?),
+            dst_port: u16::from_be_bytes(bytes[2..=3].try_into().map_err(|_| {
+                super::PacketError::ErrorParsingHeaderFields {
+                    header: Self::HEADER,
+                    field: "destination port",
+                }
+            })?),
+            seq_num: u32::from_be_bytes(bytes[4..=7].try_into().map_err(|_| {
+                super::PacketError::ErrorParsingHeaderFields {
+                    header: Self::HEADER,
+                    field: "sequence num",
+                }
+            })?),
+            ack_num: u32::from_be_bytes(bytes[8..=11].try_into().map_err(|_| {
+                super::PacketError::ErrorParsingHeaderFields {
+                    header: Self::HEADER,
+                    field: "ack num",
+                }
+            })?),
             data: &bytes[20..],
         })
     }

@@ -1,5 +1,5 @@
-use std::fmt;
 use super::Protocol;
+use std::fmt;
 
 #[repr(C)]
 pub struct IPv6Header<'a> {
@@ -11,8 +11,19 @@ pub struct IPv6Header<'a> {
 }
 
 impl IPv6Header<'_> {
-    pub fn parse(bytes: &[u8]) -> Option<IPv6Header<'_>> {
-        Some(IPv6Header {
+    pub const MIN_LEN: usize = 40;
+    pub const HEADER: &'static str = "ipv6";
+
+    pub fn parse(bytes: &[u8]) -> Result<IPv6Header<'_>, super::PacketError> {
+        if bytes.len() < Self::MIN_LEN {
+            return Err(super::PacketError::InvalidHeaderLength {
+                header: Self::HEADER,
+                min: Self::MIN_LEN,
+                actual: bytes.len(),
+            });
+        }
+
+        Ok(IPv6Header {
             dst: std::array::from_fn(|i| {
                 let offset = 24 + i * 2;
                 u16::from_be_bytes(bytes[offset..=offset + 1].try_into().unwrap())
@@ -24,7 +35,12 @@ impl IPv6Header<'_> {
             protocol: match bytes[6] {
                 6 => Protocol::TCP,
                 17 => Protocol::UDP,
-                _ => Protocol::Unknown,
+                other => {
+                    return Err(super::PacketError::UnsupportedFieldType {
+                        header: "protocol",
+                        field: other.to_string(),
+                    });
+                }
             },
             ttl: bytes[7],
             data: &bytes[40..],

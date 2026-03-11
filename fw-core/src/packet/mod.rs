@@ -32,7 +32,6 @@ pub enum TransportHeader<'a> {
 pub enum Protocol {
     TCP,
     UDP,
-    Unknown,
 }
 
 impl<'a> IpHeader<'a> {
@@ -50,21 +49,36 @@ impl<'a> IpHeader<'a> {
     }
 }
 
-pub fn parse_packet<'a>(bytes: &[u8]) -> Option<ParsedPacket<'_>> {
+#[derive(Debug)]
+pub enum PacketError {
+    InvalidHeaderLength {
+        header: &'static str,
+        min: usize,
+        actual: usize,
+    },
+    ErrorParsingHeaderFields {
+        header: &'static str,
+        field: &'static str,
+    },
+    UnsupportedFieldType {
+        header: &'static str,
+        field: String,
+    }
+}
+
+pub fn parse_packet<'a>(bytes: &[u8]) -> Result<ParsedPacket<'_>, PacketError> {
     let eth = EthernetHeader::parse(bytes)?;
     let ip_header = match eth.ether_type {
         ethernet::EtherType::IPv4 => IpHeader::V4(IPv4Header::parse(eth.payload)?),
         ethernet::EtherType::IPv6 => IpHeader::V6(IPv6Header::parse(eth.payload)?),
-        ethernet::EtherType::Unknown => return None,
     };
 
     let transport_header = match ip_header.protocol() {
         Protocol::TCP => TransportHeader::Tcp(TcpHeader::parse(ip_header.data())?),
         Protocol::UDP => TransportHeader::Udp(UdpHeader::parse(ip_header.data())?),
-        _ => return None,
     };
 
-    Some(ParsedPacket {
+    Ok(ParsedPacket {
         ethernet: eth,
         ip: ip_header,
         transport: transport_header,
@@ -89,6 +103,28 @@ impl std::fmt::Display for TransportHeader<'_> {
 }
 impl std::fmt::Display for ParsedPacket<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        write!(f,"------------Packet-------------\n{}\n{}\n{}\n", self.ethernet, self.ip, self.transport)
+        write!(
+            f,
+            "------------Packet-------------\n{}\n{}\n{}\n",
+            self.ethernet, self.ip, self.transport
+        )
     }
 }
+
+impl std::fmt::Display for PacketError {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        match self {
+            PacketError::InvalidHeaderLength { header, min, actual }=> {
+                write!(f, "Header {} has invalid length. Expected at least {} bytes, got {}.", header, min, actual)
+            },
+            PacketError::ErrorParsingHeaderFields { header, field } => {
+                write!(f, "Failed to parse header {} on field {}.", header, field)
+            },
+            PacketError::UnsupportedFieldType { header, field } => {
+                write!(f, "Field type {} in header {} not yet supported.", field, header)
+            }
+        }
+    }
+}
+
+impl std::error::Error for PacketError {}

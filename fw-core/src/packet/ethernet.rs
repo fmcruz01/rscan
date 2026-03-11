@@ -12,18 +12,42 @@ pub struct EthernetHeader<'a> {
 pub enum EtherType {
     IPv4,
     IPv6,
-    Unknown,
 }
 
 impl EthernetHeader<'_> {
-    pub fn parse(bytes: &[u8]) -> Option<EthernetHeader<'_>> {
-        Some(EthernetHeader {
-            dst: bytes[0..=5].try_into().ok()?,
-            src: bytes[6..=11].try_into().ok()?,
+    pub const MIN_LEN: usize = 14;
+    pub const HEADER: &'static str = "eth";
+
+    pub fn parse(bytes: &[u8]) -> Result<EthernetHeader<'_>, super::PacketError> {
+        if bytes.len() < Self::MIN_LEN {
+            return Err(super::PacketError::InvalidHeaderLength {
+                header: Self::HEADER,
+                min: Self::MIN_LEN,
+                actual: bytes.len(),
+            });
+        }
+        Ok(EthernetHeader {
+            dst: bytes[0..=5].try_into().map_err(|_| {
+                super::PacketError::ErrorParsingHeaderFields {
+                    header: Self::HEADER,
+                    field: "destination MAC address",
+                }
+            })?,
+            src: bytes[6..=11].try_into().map_err(|_| {
+                super::PacketError::ErrorParsingHeaderFields {
+                    header: Self::HEADER,
+                    field: "source MAC address",
+                }
+            })?,
             ether_type: match ((bytes[12] as u16) << 8) + bytes[13] as u16 {
                 0x0800 => EtherType::IPv4,
                 0x86DD => EtherType::IPv6,
-                _ => EtherType::Unknown,
+                other => {
+                    return Err(super::PacketError::UnsupportedFieldType {
+                        header: "ip",
+                        field: other.to_string(),
+                    });
+                }
             },
             payload: &bytes[14..],
         })

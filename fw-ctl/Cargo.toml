@@ -5,3 +5,5 @@ edition = "2024"
 
 [dependencies]
 fw-user = { path = "../fw-user" }
+tokio = { workspace = true }
+ctrlc = "3.5.2"

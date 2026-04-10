@@ -1,5 +1,7 @@
 use fw_core::packet::parse_packet;
 use pcap::Device;
+use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 #[derive(Debug)]
 pub enum RuntimeError {
@@ -8,7 +10,7 @@ pub enum RuntimeError {
     CaptureError,
 }
 
-pub fn start_capture(verbose: bool) -> Result<(), RuntimeError> {
+pub fn start_capture(verbose: bool, running_flag: Arc<AtomicBool>) -> Result<(), RuntimeError> {
     let device = Device::lookup()
         .map_err(|_| RuntimeError::PermissionDenied)?
         .ok_or(RuntimeError::InterfaceNotFound)?;
@@ -19,9 +21,10 @@ pub fn start_capture(verbose: bool) -> Result<(), RuntimeError> {
         } else {
             RuntimeError::CaptureError
         }
+
     })?;
 
-    while let Ok(packet) = cap.next_packet() {
+    while running_flag.load(Ordering::SeqCst) && let Ok(packet) = cap.next_packet()  {
         if verbose {
             match parse_packet(packet.data) {
                 Ok(h) => {

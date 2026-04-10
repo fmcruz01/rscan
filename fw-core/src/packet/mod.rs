@@ -121,7 +121,7 @@ impl std::fmt::Display for PacketError {
                 write!(f, "Failed to parse header {} on field {}.", header, field)
             },
             PacketError::UnsupportedFieldType { header, field } => {
-                write!(f, "Field type {} in header {} not yet supported.", field, header)
+                write!(f, "{} type {} not yet supported.",  header, field)
             }
         }
     }

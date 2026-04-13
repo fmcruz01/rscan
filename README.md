@@ -11,4 +11,5 @@ Rust workspace for packet capture and packet parsing experiments.
 ## Usage
 
 ```bash
-cargo run -p rscan-cli -- sniff
+cargo run -p rscan -- sniff
+```

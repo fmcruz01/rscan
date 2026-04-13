@@ -1,5 +1,4 @@
 pub mod ethernet;
-pub mod icmp;
 pub mod ipv4;
 pub mod ipv6;
 pub mod tcp;
@@ -63,7 +62,7 @@ pub enum PacketError {
     UnsupportedFieldType {
         header: &'static str,
         field: String,
-    }
+    },
 }
 
 pub fn parse_packet<'a>(bytes: &[u8]) -> Result<ParsedPacket<'_>, PacketError> {
@@ -114,14 +113,22 @@ impl std::fmt::Display for ParsedPacket<'_> {
 impl std::fmt::Display for PacketError {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            PacketError::InvalidHeaderLength { header, min, actual }=> {
-                write!(f, "Header {} has invalid length. Expected at least {} bytes, got {}.", header, min, actual)
-            },
+            PacketError::InvalidHeaderLength {
+                header,
+                min,
+                actual,
+            } => {
+                write!(
+                    f,
+                    "Header {} has invalid length. Expected at least {} bytes, got {}.",
+                    header, min, actual
+                )
+            }
             PacketError::ErrorParsingHeaderFields { header, field } => {
                 write!(f, "Failed to parse header {} on field {}.", header, field)
-            },
+            }
             PacketError::UnsupportedFieldType { header, field } => {
-                write!(f, "{} type {} not yet supported.",  header, field)
+                write!(f, "{} type {} not yet supported.", header, field)
             }
         }
     }

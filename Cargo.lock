@@ -101,6 +101,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "cli"
+version = "0.1.0"
+dependencies = [
+ "ctrlc",
+ "runtime",
+ "tokio",
+]
+
+[[package]]
+name = "core"
+version = "0.1.0"
+
+[[package]]
 name = "core-foundation-sys"
 version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -155,29 +168,6 @@ name = "find-msvc-tools"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5baebc0774151f905a1a2cc41989300b1e6fbb29aff0ceffa1064fdd3088d582"
-
-[[package]]
-name = "fw-core"
-version = "0.1.0"
-
-[[package]]
-name = "fw-ctl"
-version = "0.1.0"
-dependencies = [
- "ctrlc",
- "fw-user",
- "tokio",
-]
-
-[[package]]
-name = "fw-user"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "chrono",
- "fw-core",
- "pcap",
-]
 
 [[package]]
 name = "iana-time-zone"
@@ -408,6 +398,16 @@ name = "regex-syntax"
 version = "0.8.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a96887878f22d7bad8a3b6dc5b7440e0ada9a245242924394987b21cf2210a4c"
+
+[[package]]
+name = "runtime"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "core",
+ "pcap",
+]
 
 [[package]]
 name = "rustversion"

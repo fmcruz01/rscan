@@ -6,8 +6,8 @@
 
 use std::env::args;
 use std::process::exit;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 fn main() -> Result<(), ()> {
     let running = Arc::new(AtomicBool::new(true));
@@ -24,7 +24,7 @@ fn main() -> Result<(), ()> {
         Some("sniff") => {
             let verbose = true;
             println!("Starting capture...");
-            if let Err(e) = fw_user::runtime::start_capture(verbose, running) {
+            if let Err(e) = runtime::runtime::start_capture(verbose, running) {
                 eprintln!("error: {e:?}");
                 exit(1);
             }
@@ -39,8 +39,8 @@ fn main() -> Result<(), ()> {
 fn help() {
     println!(
         "usage:
-fw-ctl sniff [ -v ]
-    Start firewall. Use -v for verbose mode.
+rscan sniff [ -v ]
+    Start packet capture. Use -v for verbose mode.
 "
     );
 }

@@ -1,8 +1,8 @@
 [workspace]
 members = [
-    "fw-core",
-    "fw-ctl",
-    "fw-user",
+    "core",
+    "cli",
+    "runtime",
 ]
 resolver="3"
 

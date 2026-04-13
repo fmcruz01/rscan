@@ -1,4 +1,4 @@
-use fw_core::packet::parse_packet;
+use core::packet::parse_packet;
 use pcap::Device;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};

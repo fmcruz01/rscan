@@ -1,10 +1,10 @@
 [package]
-name = "fw-user"
+name = "runtime"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
 pcap = "2.4.0"
 chrono = "0.4.43"
-fw-core = { path = "../fw-core" }
+core = { path = "../core"}
 anyhow = { workspace = true }

@@ -1,9 +1,9 @@
 [package]
-name = "fw-ctl"
+name = "cli"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-fw-user = { path = "../fw-user" }
+runtime = { path = "../runtime" }
 tokio = { workspace = true }
 ctrlc = "3.5.2"

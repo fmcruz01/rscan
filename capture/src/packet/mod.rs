@@ -1,20 +1,19 @@
-pub mod ethernet;
-pub mod ipv4;
-pub mod ipv6;
-pub mod tcp;
-pub mod udp;
+mod ethernet;
+mod ipv4;
+mod ipv6;
+mod tcp;
+mod udp;
 
-pub use ethernet::EthernetHeader;
+use crate::packet::ethernet::EthernetHeader;
+use crate::packet::udp::UdpHeader;
 pub use ipv4::IPv4Header;
 pub use ipv6::IPv6Header;
 pub use tcp::TcpHeader;
 
-use crate::packet::udp::UdpHeader;
-
 pub struct ParsedPacket<'a> {
-    pub ethernet: EthernetHeader<'a>,
-    pub ip: IpHeader<'a>,
-    pub transport: TransportHeader<'a>,
+    ethernet: EthernetHeader<'a>,
+    ip: IpHeader<'a>,
+    transport: TransportHeader<'a>,
 }
 
 pub enum IpHeader<'a> {
@@ -34,13 +33,13 @@ pub enum Protocol {
 }
 
 impl<'a> IpHeader<'a> {
-    pub fn protocol(&self) -> &Protocol {
+    pub fn get_packet_protocol(&self) -> &Protocol {
         match self {
             IpHeader::V4(h) => &h.protocol,
             IpHeader::V6(h) => &h.protocol,
         }
     }
-    pub fn data(&self) -> &'a [u8] {
+    fn get_ip_data(&self) -> &'a [u8] {
         match self {
             IpHeader::V4(h) => h.data,
             IpHeader::V6(h) => h.data,
@@ -72,9 +71,9 @@ pub fn parse_packet<'a>(bytes: &[u8]) -> Result<ParsedPacket<'_>, PacketError> {
         ethernet::EtherType::IPv6 => IpHeader::V6(IPv6Header::parse(eth.payload)?),
     };
 
-    let transport_header = match ip_header.protocol() {
-        Protocol::TCP => TransportHeader::Tcp(TcpHeader::parse(ip_header.data())?),
-        Protocol::UDP => TransportHeader::Udp(UdpHeader::parse(ip_header.data())?),
+    let transport_header = match ip_header.get_packet_protocol() {
+        Protocol::TCP => TransportHeader::Tcp(TcpHeader::parse(ip_header.get_ip_data())?),
+        Protocol::UDP => TransportHeader::Udp(UdpHeader::parse(ip_header.get_ip_data())?),
     };
 
     Ok(ParsedPacket {
@@ -83,6 +82,7 @@ pub fn parse_packet<'a>(bytes: &[u8]) -> Result<ParsedPacket<'_>, PacketError> {
         transport: transport_header,
     })
 }
+
 impl std::fmt::Display for IpHeader<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {

@@ -2,11 +2,11 @@ use std::fmt;
 
 #[repr(C)]
 #[derive(Debug)]
-pub struct EthernetHeader<'a> {
-    pub dst: [u8; 6],
-    pub src: [u8; 6],
-    pub ether_type: EtherType,
-    pub payload: &'a [u8],
+pub(super) struct EthernetHeader<'a> {
+    pub(super) dst: [u8; 6],
+    pub(super) src: [u8; 6],
+    pub(super) ether_type: EtherType,
+    pub(super) payload: &'a [u8],
 }
 #[derive(Debug)]
 pub enum EtherType {
@@ -15,10 +15,10 @@ pub enum EtherType {
 }
 
 impl EthernetHeader<'_> {
-    pub const MIN_LEN: usize = 14;
-    pub const HEADER: &'static str = "eth";
+    const MIN_LEN: usize = 14;
+    const HEADER: &'static str = "eth";
 
-    pub fn parse(bytes: &[u8]) -> Result<EthernetHeader<'_>, super::PacketError> {
+    pub(super) fn parse(bytes: &[u8]) -> Result<EthernetHeader<'_>, super::PacketError> {
         if bytes.len() < Self::MIN_LEN {
             return Err(super::PacketError::InvalidHeaderLength {
                 header: Self::HEADER,

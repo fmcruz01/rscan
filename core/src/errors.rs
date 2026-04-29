@@ -19,7 +19,7 @@ impl Error {
 
 impl Display for Error {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "{}: {}", self.err_type, self.message)
+        write!(f, "{}: {}\n", self.err_type, self.message)
     }
 }
 

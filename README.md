@@ -19,9 +19,23 @@ This project is currently being reorganized into a crate-based architecture.
 
 ## Usage
 
-```bash
-sudo cargo run --bin rscan -- sniff
 ```
+usage: rscan [MODE] [OPTIONS]
+
+Arguments:
+-t, --tui           Terminal User Interface mode. (Default mode).
+-p, --passive       Passive mode. (Displaying packets metadata).
+-a, --active        Active mode (Host/port discovery).
+
+
+Options:
+-v, --verbose       Verbose output logging.
+-h, --help          Print help.
+-V, --version       Print version.
+
+Notes:
+If no mode is specified, --tui is assumed.
+ ```
 
 ## Crates
 

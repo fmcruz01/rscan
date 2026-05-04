@@ -1,14 +1,14 @@
 use std::fmt;
 
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub(super) struct EthernetHeader<'a> {
     pub(super) dst: [u8; 6],
     pub(super) src: [u8; 6],
     pub(super) ether_type: EtherType,
     pub(super) payload: &'a [u8],
 }
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum EtherType {
     IPv4,
     IPv6,
@@ -45,7 +45,7 @@ impl EthernetHeader<'_> {
                 other => {
                     return Err(super::PacketError::UnsupportedFieldType {
                         header: "ip",
-                        field: other.to_string(),
+                        field: format!("0x{:04X}", other),
                     });
                 }
             },
@@ -73,5 +73,46 @@ impl fmt::Display for EthernetHeader<'_> {
             self.src[5],
             self.ether_type
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::packet::PacketError;
+
+    #[test]
+    fn eth_header_parse_success() {
+        // 00 1A 2B 3C 4D 5E 00 5E 4D 3C 2B 1A 08 00
+        let header: &[u8; _] = &[0, 26, 43, 60, 77, 94, 0, 94, 77, 60, 43, 26, 8, 0];
+        let expected = EthernetHeader {
+            dst: [0, 26, 43, 60, 77, 94],
+            src: [0, 94, 77, 60, 43, 26],
+            ether_type: EtherType::IPv4,
+            payload: &[][..],
+        };
+        assert_eq!(EthernetHeader::parse(header), Ok(expected));
+    }
+
+    #[test]
+    fn eth_header_min_length_fail() {
+        let header: &[u8] = &[][..];
+        let err = PacketError::InvalidHeaderLength {
+            header: "eth",
+            min: 14,
+            actual: 0,
+        };
+        assert_eq!(EthernetHeader::parse(header), Err(err));
+    }
+
+    #[test]
+    fn eth_wrong_eth_type() {
+        // 00 1A 2B 3C 4D 5E 00 5E 4D 3C 2B 1A 08 00
+        let header: &[u8; _] = &[0, 26, 43, 60, 77, 94, 0, 94, 77, 60, 43, 26, 7, 0];
+        let err = PacketError::UnsupportedFieldType {
+            header: "ip",
+            field: String::from("0x0700"),
+        };
+        assert_eq!(EthernetHeader::parse(header), Err(err));
     }
 }

@@ -2,6 +2,7 @@ use super::Protocol;
 use std::fmt;
 
 #[repr(C)]
+#[derive(Debug, PartialEq)]
 pub struct IPv6Header<'a> {
     pub dst: [u16; 8],
     pub src: [u16; 8],
@@ -22,7 +23,7 @@ impl IPv6Header<'_> {
                 actual: bytes.len(),
             });
         }
-
+        let ihl: u16 = u16::from_be_bytes(bytes[4..=5].try_into().unwrap());
         Ok(IPv6Header {
             dst: std::array::from_fn(|i| {
                 let offset = 24 + i * 2;
@@ -43,7 +44,7 @@ impl IPv6Header<'_> {
                 }
             },
             ttl: bytes[7],
-            data: &bytes[40..],
+            data: if ihl == 40 { &[][..] } else { &bytes[40..] },
         })
     }
 }
@@ -72,5 +73,57 @@ impl fmt::Display for IPv6Header<'_> {
             self.protocol,
             self.ttl
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::packet::PacketError;
+
+    #[test]
+    fn ipv6_header_parse_success() {
+        let header: &[u8; _] = &[
+            0x60, 0x00, 0x00, 0x00, 0x00, 0x28, 0x06, 0x40, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x20, 0x01, 0x0d, 0xb8,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08,
+        ];
+        let expected = IPv6Header {
+            dst: [
+                0x2001, 0x0DB8, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0008,
+            ],
+            src: [
+                0x2001, 0x0DB8, 0x0000, 0x0000, 0x0000, 0x0000, 0x0000, 0x0001,
+            ],
+            ttl: 64,
+            protocol: Protocol::TCP,
+            data: &[][..],
+        };
+        assert_eq!(IPv6Header::parse(header), Ok(expected));
+    }
+
+    #[test]
+    fn ipv6_header_min_length_fail() {
+        let header: &[u8] = &[][..];
+        let err = PacketError::InvalidHeaderLength {
+            header: "ipv6",
+            min: 40,
+            actual: 0,
+        };
+        assert_eq!(IPv6Header::parse(header), Err(err));
+    }
+
+    #[test]
+    fn ipv6_wrong_protocol_type() {
+        let header: &[u8; _] = &[
+            0x60, 0x00, 0x00, 0x00, 0x00, 0x28, 0x01, 0x40, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x20, 0x01, 0x0d, 0xb8,
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x08,
+        ];
+        let err = PacketError::UnsupportedFieldType {
+            header: "protocol",
+            field: String::from("1"),
+        };
+        assert_eq!(IPv6Header::parse(header), Err(err));
     }
 }

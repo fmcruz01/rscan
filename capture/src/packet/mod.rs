@@ -26,7 +26,7 @@ pub enum TransportHeader<'a> {
     Udp(UdpHeader<'a>),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Protocol {
     TCP,
     UDP,
@@ -47,7 +47,7 @@ impl<'a> IpHeader<'a> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum PacketError {
     InvalidHeaderLength {
         header: &'static str,

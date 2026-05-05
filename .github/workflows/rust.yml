@@ -24,7 +24,10 @@ jobs:
       with:
         toolchain: stable
         override: true
-        component: llvm-tools-preview
+
+    # Install llvm tools
+    - name: Install llvm-tools component explicitly
+      run: rustup component add llvm-tools-preview --toolchain stable
 
     # Install just
     - name: Install just
